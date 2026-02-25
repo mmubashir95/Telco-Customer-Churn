@@ -26,6 +26,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report
+from scipy.stats import chi2_contingency
 
 
 # =============================================================
@@ -200,3 +201,67 @@ print(classification_report(y_test, y_pred))
 # =============================================================
 # 🚀 END OF SCRIPT
 # =============================================================
+
+# ==============================================
+# CATEGORICAL FEATURE vs CHURN ANALYSIS
+# ==============================================
+
+# Ensure Churn is numeric (0/1)
+if df["Churn"].dtype == "object":
+    df["Churn"] = df["Churn"].map({"Yes": 1, "No": 0})
+
+# Identify categorical columns
+categorical_cols = df.select_dtypes(include=["object"]).columns.tolist()
+
+# Remove customerID if present
+if "customerID" in categorical_cols:
+    categorical_cols.remove("customerID")
+
+print("\n" + "="*80)
+print("CATEGORICAL FEATURE ANALYSIS (Churn Rate per Category)")
+print("="*80)
+
+for col in categorical_cols:
+    print("\n" + "="*60)
+    print(f"Feature: {col}")
+    print("="*60)
+
+    churn_analysis = (
+        df
+        .groupby(col)["Churn"]
+        .agg(["count", "mean"])
+        .sort_values(by="mean", ascending=False)
+    )
+
+    churn_analysis.rename(columns={"mean": "churn_rate"}, inplace=True)
+    churn_analysis["churn_rate_%"] = churn_analysis["churn_rate"] * 100
+
+    print(churn_analysis)
+
+print("\n" + "="*80)
+print("CHI-SQUARE TEST (Categorical Features vs Churn)")
+print("="*80)
+
+# Ensure Churn is numeric (0/1)
+if df["Churn"].dtype == "object":
+    df["Churn"] = df["Churn"].map({"Yes": 1, "No": 0})
+
+# Identify categorical columns
+categorical_cols = df.select_dtypes(include=["object"]).columns.tolist()
+
+# Remove ID column if exists
+if "customerID" in categorical_cols:
+    categorical_cols.remove("customerID")
+
+for col in categorical_cols:
+    print("\n" + "-"*60)
+    print(f"Feature: {col}")
+    print("-"*60)
+
+    table = pd.crosstab(df[col], df["Churn"])
+
+    chi2, p, dof, expected = chi2_contingency(table)
+
+    print("Chi2 statistic:", chi2)
+    print("Degrees of freedom:", dof)
+    print("p-value:", p)
