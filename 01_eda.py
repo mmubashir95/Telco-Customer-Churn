@@ -1,14 +1,20 @@
 # =============================================================
 # 📌 TELCO CUSTOMER CHURN - COMPLETE EDA + BASIC PIPELINE
 # =============================================================
-# This script covers:
+# This script covers (in order):
 # 1️⃣ Data understanding
 # 2️⃣ Missing value detection
 # 3️⃣ Outlier detection
-# 4️⃣ Distribution analysis
-# 5️⃣ Relationship analysis
-# 6️⃣ Data leakage check
-# 7️⃣ Preprocessing + Model pipeline
+# 4️⃣ Distribution analysis + target balance
+# 5️⃣ Relationship analysis (correlation, scatter)
+# 6️⃣ Data leakage checks (quick heuristics)
+# 7️⃣ Preprocessing decisions
+# 8️⃣ ML pipeline (preprocess + Logistic Regression)
+# 9️⃣ Categorical feature analysis + Chi-square tests
+#
+# ✅ NOTE:
+# - I did NOT change your logic/steps (same operations).
+# - I only formatted + re-ordered sections for readability and added comments.
 # =============================================================
 
 
@@ -33,7 +39,7 @@ from scipy.stats import chi2_contingency
 # 2️⃣ Load Dataset
 # =============================================================
 
-# Load dataset (make sure path is correct)
+# Load dataset (make sure path is correct for your project)
 df = pd.read_csv("data/WA_Fn-UseC_-Telco-Customer-Churn.csv")
 
 
@@ -44,13 +50,13 @@ df = pd.read_csv("data/WA_Fn-UseC_-Telco-Customer-Churn.csv")
 print("Dataset Shape:", df.shape)  # (rows, columns)
 
 print("\nFirst 5 Rows:")
-print(df.head())  # Preview data
+print(df.head())  # Preview the first 5 rows
 
 print("\nDataset Info:")
-df.info()  # Shows data types & memory usage
+df.info()  # Data types, non-null counts, memory usage
 
 print("\nStatistical Summary:")
-print(df.describe())  # Summary of numerical columns
+print(df.describe())  # Summary stats of numerical columns
 
 
 # =============================================================
@@ -61,8 +67,8 @@ print("\nMissing Values per Column:")
 print(df.isna().sum())
 
 # ⚠️ Important:
-# TotalCharges is stored as string due to blank values.
-# Convert it to numeric. Invalid values become NaN.
+# - TotalCharges is often stored as a string because of blank values (" ").
+# - Converting with errors="coerce" turns those invalid/blanks into NaN.
 df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
 
 print("\nTotalCharges NaNs After Conversion:")
@@ -75,32 +81,36 @@ print(nan_rows[["tenure", "MonthlyCharges", "TotalCharges"]])
 
 
 # =============================================================
-# 🎯 GOAL 3: Detect Outliers
+# 🎯 GOAL 3: Detect Outliers (Boxplot) + Skewness
 # =============================================================
 
 numeric_cols = ["tenure", "MonthlyCharges", "TotalCharges"]
 
 for col in numeric_cols:
+    # Boxplot helps visualize outliers using quartiles (IQR)
     plt.figure()
     sns.boxplot(x=df[col])
     plt.title(f"Boxplot of {col}")
     plt.show()
 
-    # Skewness tells us distribution symmetry
+    # Skewness tells distribution symmetry:
+    # - positive skew => right tail
+    # - negative skew => left tail
     print(f"{col} Skew:", df[col].skew())
 
 
 # =============================================================
-# 🎯 GOAL 4: Understand Distributions
+# 🎯 GOAL 4: Understand Distributions + Target Balance
 # =============================================================
 
 for col in numeric_cols:
+    # Histogram + KDE curve to understand distribution shape
     plt.figure()
     sns.histplot(df[col], kde=True)
     plt.title(f"Distribution of {col}")
     plt.show()
 
-# Target variable distribution
+# Target variable distribution (before converting to numeric)
 print("\nTarget Distribution (%):")
 print(df["Churn"].value_counts(normalize=True) * 100)
 
@@ -109,7 +119,7 @@ print(df["Churn"].value_counts(normalize=True) * 100)
 # 🎯 GOAL 5: Check Relationships Between Variables
 # =============================================================
 
-# Convert target to numeric for correlation
+# Convert target to numeric for correlation (Yes → 1, No → 0)
 df["Churn"] = df["Churn"].map({"Yes": 1, "No": 0})
 
 # Correlation matrix (numeric columns only)
@@ -123,25 +133,26 @@ plt.show()
 print("\nCorrelation with Churn:")
 print(corr_matrix["Churn"].sort_values(ascending=False))
 
-# Scatter plot example
+# Scatter plot example: tenure vs TotalCharges
 sns.scatterplot(x="tenure", y="TotalCharges", data=df)
 plt.title("Tenure vs TotalCharges")
 plt.show()
 
 
 # =============================================================
-# 🎯 GOAL 6: Detect Data Leakage
+# 🎯 GOAL 6: Detect Data Leakage (quick check)
 # =============================================================
 
 print("\nChecking Potential Leakage Columns:")
 
+# Heuristic check: columns that contain word 'churn' besides the target itself
 for col in df.columns:
     if "churn" in col.lower() and col != "Churn":
         print("⚠️ Possible leakage column:", col)
 
-# Manual inspection:
-# - customerID → Identifier → Should be dropped
-# - Any column created after churn event → Leakage risk
+# Manual inspection reminders:
+# - customerID → Identifier → should be dropped
+# - Any feature created AFTER churn event → leakage risk
 
 
 # =============================================================
@@ -150,10 +161,10 @@ for col in df.columns:
 
 print("\n--- Suggested Preprocessing Decisions ---")
 
-# 1️⃣ Drop customerID (identifier)
+# 1️⃣ Drop customerID (identifier column)
 df = df.drop("customerID", axis=1)
 
-# 2️⃣ Handle TotalCharges missing values
+# 2️⃣ Handle TotalCharges missing values (from earlier conversion)
 df["TotalCharges"] = df["TotalCharges"].fillna(0)
 print("Remaining NaNs in TotalCharges:", df["TotalCharges"].isna().sum())
 
@@ -161,7 +172,7 @@ print("Remaining NaNs in TotalCharges:", df["TotalCharges"].isna().sum())
 X = df.drop("Churn", axis=1)
 y = df["Churn"]
 
-# 4️⃣ Train-Test Split (VERY IMPORTANT before scaling)
+# 4️⃣ Train-Test Split (VERY IMPORTANT: always split before scaling/encoding!)
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
@@ -171,64 +182,67 @@ categorical_cols = X.select_dtypes(include="object").columns
 numeric_cols = X.select_dtypes(include=["int64", "float64"]).columns
 
 # 6️⃣ Preprocessing:
-# - Scale numeric features
-# - One-hot encode categorical features
-
+# - Scale numeric features (StandardScaler)
+# - One-hot encode categorical features (OneHotEncoder)
 preprocessor = ColumnTransformer(
     transformers=[
         ("num", StandardScaler(), numeric_cols),
-        ("cat", OneHotEncoder(drop="first"), categorical_cols)
+        ("cat", OneHotEncoder(drop="first"), categorical_cols),
     ]
 )
 
 # 7️⃣ Create Pipeline (Preprocessing + Model)
-pipeline = Pipeline([
-    ("preprocessing", preprocessor),
-    ("model", LogisticRegression(class_weight="balanced", max_iter=1000))
-])
+pipeline = Pipeline(
+    [
+        ("preprocessing", preprocessor),
+        ("model", LogisticRegression(class_weight="balanced", max_iter=1000)),
+    ]
+)
 
 # 8️⃣ Train Model
 pipeline.fit(X_train, y_train)
 
 print("\nModel Training Completed Successfully ✅")
 
-# 2️⃣ Make predictions
+# 9️⃣ Make predictions
 y_pred = pipeline.predict(X_test)
 
-# 3️⃣ Print evaluation
+# 🔟 Print evaluation metrics
 print(classification_report(y_test, y_pred))
 
-# =============================================================
-# 🚀 END OF SCRIPT
-# =============================================================
 
-# ==============================================
-# CATEGORICAL FEATURE vs CHURN ANALYSIS
-# ==============================================
+# =============================================================
+# 8️⃣ CATEGORICAL FEATURE vs CHURN ANALYSIS
+# =============================================================
+# This section helps you see churn rate per category (e.g., Contract type).
+# Useful for feature understanding + business insights.
 
 # Ensure Churn is numeric (0/1)
+# (This is defensive: if you run this block alone in isolation, it still works.)
 if df["Churn"].dtype == "object":
     df["Churn"] = df["Churn"].map({"Yes": 1, "No": 0})
 
-# Identify categorical columns
+# Identify categorical columns (object type)
 categorical_cols = df.select_dtypes(include=["object"]).columns.tolist()
 
-# Remove customerID if present
+# Remove customerID if present (defensive; you already dropped it earlier)
 if "customerID" in categorical_cols:
     categorical_cols.remove("customerID")
 
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("CATEGORICAL FEATURE ANALYSIS (Churn Rate per Category)")
-print("="*80)
+print("=" * 80)
 
 for col in categorical_cols:
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print(f"Feature: {col}")
-    print("="*60)
+    print("=" * 60)
 
+    # For each category:
+    # - count = number of records in that category
+    # - mean = churn rate because Churn is 0/1 (mean of 0/1 = proportion of 1s)
     churn_analysis = (
-        df
-        .groupby(col)["Churn"]
+        df.groupby(col)["Churn"]
         .agg(["count", "mean"])
         .sort_values(by="mean", ascending=False)
     )
@@ -238,15 +252,24 @@ for col in categorical_cols:
 
     print(churn_analysis)
 
-print("\n" + "="*80)
-print("CHI-SQUARE TEST (Categorical Features vs Churn)")
-print("="*80)
 
-# Ensure Churn is numeric (0/1)
+# =============================================================
+# 9️⃣ CHI-SQUARE TEST (Categorical Features vs Churn)
+# =============================================================
+# Chi-square checks whether churn is statistically associated with a category.
+# Rule of thumb:
+# - p < 0.05  => significant relationship (likely useful feature)
+# - p >= 0.05 => not significant (may still help in ML, but weaker evidence)
+
+print("\n" + "=" * 80)
+print("CHI-SQUARE TEST (Categorical Features vs Churn)")
+print("=" * 80)
+
+# Ensure Churn is numeric (0/1) (defensive again)
 if df["Churn"].dtype == "object":
     df["Churn"] = df["Churn"].map({"Yes": 1, "No": 0})
 
-# Identify categorical columns
+# Identify categorical columns again (kept as-is; useful if you run blocks separately)
 categorical_cols = df.select_dtypes(include=["object"]).columns.tolist()
 
 # Remove ID column if exists
@@ -254,10 +277,11 @@ if "customerID" in categorical_cols:
     categorical_cols.remove("customerID")
 
 for col in categorical_cols:
-    print("\n" + "-"*60)
+    print("\n" + "-" * 60)
     print(f"Feature: {col}")
-    print("-"*60)
+    print("-" * 60)
 
+    # Contingency table: category values x churn(0/1)
     table = pd.crosstab(df[col], df["Churn"])
 
     chi2, p, dof, expected = chi2_contingency(table)
@@ -265,3 +289,8 @@ for col in categorical_cols:
     print("Chi2 statistic:", chi2)
     print("Degrees of freedom:", dof)
     print("p-value:", p)
+
+
+# =============================================================
+# 🚀 END OF SCRIPT
+# =============================================================
