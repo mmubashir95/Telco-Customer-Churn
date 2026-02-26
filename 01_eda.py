@@ -329,3 +329,28 @@ for col in categorical_cols:
 # ✅ Final Missing-Value Check (Clean Output)
 # =============================================================
 print_missing_report(df, title="Final missing % (end of script)")
+
+categorical_cols = df.select_dtypes(include="object").columns
+
+for col in categorical_cols:
+    print("\n" + "="*60)
+    print(f"{col.upper()} DISTRIBUTION (%)")
+    print("="*60)
+    print((df[col].value_counts(normalize=True) * 100).round(2))
+    print("="*60)
+
+    # ============================================================
+# CHURN RATE PER CATEGORICAL FEATURE
+# ============================================================
+
+categorical_cols = df.select_dtypes(include="object").columns
+
+for col in categorical_cols:
+    print("\n" + "="*60)
+    print(f"CHURN DISTRIBUTION FOR: {col.upper()}")
+    print("="*60)
+    
+    churn_table = pd.crosstab(df[col], df["Churn"], normalize="index") * 100
+    print(churn_table.round(2))
+    
+    print("="*60)
