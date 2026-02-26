@@ -126,6 +126,33 @@ for col in numeric_cols:
     # - negative skew => left tail
     print(f"{col} Skew:", df[col].skew())
 
+# Loop through each numerical column to detect outliers using IQR method
+for col in numeric_cols:
+
+    # Calculate 1st Quartile (25th percentile)
+    Q1 = df[col].quantile(0.25)
+
+    # Calculate 3rd Quartile (75th percentile)
+    Q3 = df[col].quantile(0.75)
+
+    # Compute Interquartile Range (IQR)
+    IQR = Q3 - Q1
+
+    # Define lower boundary for outlier detection
+    # Any value below this will be considered an outlier
+    lower = Q1 - 1.5 * IQR
+
+    # Define upper boundary for outlier detection
+    # Any value above this will be considered an outlier
+    upper = Q3 + 1.5 * IQR
+
+    # Identify rows where values fall outside the lower and upper bounds
+    # These rows are potential outliers
+    outliers = df[(df[col] < lower) | (df[col] > upper)]
+
+    # Calculate and print percentage of outliers in this column
+    # (number of outlier rows divided by total dataset size)
+    print(col, "Outlier %:", len(outliers)/len(df)*100)
 
 # =============================================================
 # 🎯 GOAL 4: Understand Distributions + Target Balance
