@@ -25,6 +25,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import numpy as np
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
@@ -192,7 +193,18 @@ print("\n--- Suggested Preprocessing Decisions ---")
 df = df.drop("customerID", axis=1)
 
 # 2️⃣ Handle TotalCharges missing values (from earlier conversion)
-df["TotalCharges"] = df["TotalCharges"].fillna(0)
+df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
+
+median_total = df.loc[df["tenure"] > 0, "TotalCharges"].median()
+
+df["TotalCharges"] = np.where(
+    (df["tenure"] == 0) & (df["TotalCharges"].isna()),
+    0,
+    df["TotalCharges"]
+)
+
+df["TotalCharges"].fillna(median_total, inplace=True)
+
 print("Remaining NaNs in TotalCharges:", df["TotalCharges"].isna().sum())
 
 # Missing % check (after handling missing values)
@@ -322,12 +334,9 @@ for col in categorical_cols:
 
 
 # =============================================================
-# 🚀 END OF SCRIPT
+# Final Missing-Value Check (Clean Output)
 # =============================================================
 
-# =============================================================
-# ✅ Final Missing-Value Check (Clean Output)
-# =============================================================
 print_missing_report(df, title="Final missing % (end of script)")
 
 categorical_cols = df.select_dtypes(include="object").columns
@@ -339,7 +348,8 @@ for col in categorical_cols:
     print((df[col].value_counts(normalize=True) * 100).round(2))
     print("="*60)
 
-    # ============================================================
+
+# ============================================================
 # CHURN RATE PER CATEGORICAL FEATURE
 # ============================================================
 
@@ -354,3 +364,8 @@ for col in categorical_cols:
     print(churn_table.round(2))
     
     print("="*60)
+
+
+# =============================================================
+# 🚀 END OF SCRIPT
+# =============================================================
