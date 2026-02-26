@@ -36,11 +36,35 @@ from scipy.stats import chi2_contingency
 
 
 # =============================================================
+# ✅ Helper: Pretty Missing-Value Percentage Report
+# =============================================================
+
+def print_missing_report(df: pd.DataFrame, title: str = "Missing Value Percentage Report") -> None:
+    """Print missing-value % per column (sorted), showing only columns with missing values."""
+    print("\n" + "=" * 60)
+    print(title.upper())
+    print("=" * 60)
+
+    missing_percent = (df.isna().mean() * 100).sort_values(ascending=False)
+    missing_percent = missing_percent[missing_percent > 0]
+
+    if missing_percent.empty:
+        print("✅ No missing values found in dataset.")
+    else:
+        print(missing_percent)
+
+    print("=" * 60 + "\n")
+
+
+# =============================================================
 # 2️⃣ Load Dataset
 # =============================================================
 
 # Load dataset (make sure path is correct for your project)
 df = pd.read_csv("data/WA_Fn-UseC_-Telco-Customer-Churn.csv")
+
+# Missing % check (RAW dataset)
+print_missing_report(df, title="Missing % before cleaning")
 
 
 # =============================================================
@@ -70,6 +94,9 @@ print(df.isna().sum())
 # - TotalCharges is often stored as a string because of blank values (" ").
 # - Converting with errors="coerce" turns those invalid/blanks into NaN.
 df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
+
+# Missing % check (after converting TotalCharges)
+print_missing_report(df, title="Missing % after converting TotalCharges")
 
 print("\nTotalCharges NaNs After Conversion:")
 print(df["TotalCharges"].isna().sum())
@@ -167,6 +194,9 @@ df = df.drop("customerID", axis=1)
 # 2️⃣ Handle TotalCharges missing values (from earlier conversion)
 df["TotalCharges"] = df["TotalCharges"].fillna(0)
 print("Remaining NaNs in TotalCharges:", df["TotalCharges"].isna().sum())
+
+# Missing % check (after handling missing values)
+print_missing_report(df, title="Missing % after handling missing values")
 
 # 3️⃣ Separate Features and Target
 X = df.drop("Churn", axis=1)
@@ -294,3 +324,8 @@ for col in categorical_cols:
 # =============================================================
 # 🚀 END OF SCRIPT
 # =============================================================
+
+# =============================================================
+# ✅ Final Missing-Value Check (Clean Output)
+# =============================================================
+print_missing_report(df, title="Final missing % (end of script)")
