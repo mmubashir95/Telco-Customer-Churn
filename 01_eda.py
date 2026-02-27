@@ -74,6 +74,8 @@ print_missing_report(df, title="Missing % before cleaning")
 
 print("Dataset Shape:", df.shape)  # (rows, columns)
 
+print("Dataset Columns:", df.columns)  # (rows, columns)
+
 print("\nFirst 5 Rows:")
 print(df.head())  # Preview the first 5 rows
 
@@ -82,6 +84,9 @@ df.info()  # Data types, non-null counts, memory usage
 
 print("\nStatistical Summary:")
 print(df.describe())  # Summary stats of numerical columns
+
+print("\nMemory Usage:")
+print(df.memory_usage(deep=True))  # Memory Usage
 
 
 # =============================================================
