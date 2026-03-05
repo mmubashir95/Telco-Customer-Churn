@@ -8,7 +8,7 @@ Predict whether a telecom customer will churn (`Churn = Yes/No`) using customer 
 
 ## Dataset
 
-- File: `data/WA_Fn-UseC_-Telco-Customer-Churn.csv`
+- File: `data/raw/WA_Fn-UseC_-Telco-Customer-Churn.csv`
 - Target column: `Churn`
 - Columns: `customerID`, `gender`, `SeniorCitizen`, `Partner`, `Dependents`, `tenure`, `PhoneService`, `MultipleLines`, `InternetService`, `OnlineSecurity`, `OnlineBackup`, `DeviceProtection`, `TechSupport`, `StreamingTV`, `StreamingMovies`, `Contract`, `PaperlessBilling`, `PaymentMethod`, `MonthlyCharges`, `TotalCharges`, `Churn`
 
@@ -17,8 +17,15 @@ Predict whether a telecom customer will churn (`Churn = Yes/No`) using customer 
 ```text
 .
 ├── 01_eda.py
+├── src/
+│   └── data/
+│       └── data_loader.py
 ├── data/
-│   └── WA_Fn-UseC_-Telco-Customer-Churn.csv
+│   ├── raw/
+│   │   └── WA_Fn-UseC_-Telco-Customer-Churn.csv
+│   ├── interim/
+│   ├── processed/
+│   └── external/
 ├── README.md
 ├── requirements.txt
 ├── pyproject.toml
@@ -34,10 +41,22 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-If `requirements.txt` is still empty, install at least:
+## Data Path Configuration
 
-```bash
-pip install pandas
+Raw dataset path is configurable through environment variable:
+
+```env
+RAW_DATA_PATH=data/raw/WA_Fn-UseC_-Telco-Customer-Churn.csv
+```
+
+This is currently defined in `.env`.
+
+## Load Data in Code
+
+```python
+from src.data.data_loader import load_raw_data
+
+df = load_raw_data()
 ```
 
 ## Run EDA
