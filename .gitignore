@@ -32,6 +32,9 @@ htmlcov/
 # Jupyter
 .ipynb_checkpoints/
 
+# Local reports and generated EDA artifacts
+reports/
+
 # IDE and editor files
 .vscode/
 .idea/
