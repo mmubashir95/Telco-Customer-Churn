@@ -1,6 +1,6 @@
 # WA_Fn-UseC_-Telco-Customer-Churn
 
-Customer churn analysis project using the IBM Telco dataset (`WA_Fn-UseC_-Telco-Customer-Churn.csv`).
+Customer churn analysis project using the IBM Telco dataset.
 
 ## Problem Statement
 
@@ -8,7 +8,7 @@ Predict whether a telecom customer will churn (`Churn = Yes/No`) using customer 
 
 ## Dataset
 
-- File: `data/raw/WA_Fn-UseC_-Telco-Customer-Churn.csv`
+- File: `data/raw/telco.csv`
 - Target column: `Churn`
 - Columns: `customerID`, `gender`, `SeniorCitizen`, `Partner`, `Dependents`, `tenure`, `PhoneService`, `MultipleLines`, `InternetService`, `OnlineSecurity`, `OnlineBackup`, `DeviceProtection`, `TechSupport`, `StreamingTV`, `StreamingMovies`, `Contract`, `PaperlessBilling`, `PaymentMethod`, `MonthlyCharges`, `TotalCharges`, `Churn`
 
@@ -18,12 +18,17 @@ Predict whether a telecom customer will churn (`Churn = Yes/No`) using customer 
 .
 ├── 01_eda.py
 ├── src/
+│   ├── config.py
 │   └── data/
-│       └── data_loader.py
+│       ├── data_cleaning.py
+│       ├── data_loader.py
+│       └── data_validation.py
 ├── data/
 │   ├── raw/
+│   │   ├── telco.csv
 │   │   └── WA_Fn-UseC_-Telco-Customer-Churn.csv
 │   ├── interim/
+│   │   └── telco_churn_cleaned.csv
 │   ├── processed/
 │   └── external/
 ├── README.md
@@ -43,13 +48,22 @@ pip install -r requirements.txt
 
 ## Data Path Configuration
 
-Raw dataset path is configurable through environment variable:
+Core project settings live in `src/config.py`.
 
-```env
-RAW_DATA_PATH=data/raw/WA_Fn-UseC_-Telco-Customer-Churn.csv
+Default paths are:
+
+```python
+DATA_PATH = "data/raw/telco.csv"
+CLEANED_DATA_PATH = "data/interim/telco_churn_cleaned.csv"
+TARGET_COLUMN = "Churn"
 ```
 
-This is currently defined in `.env`.
+Raw and cleaned dataset paths can still be overridden with environment variables:
+
+```env
+RAW_DATA_PATH=data/raw/telco.csv
+CLEANED_DATA_PATH=data/interim/telco_churn_cleaned.csv
+```
 
 ## Load Data in Code
 

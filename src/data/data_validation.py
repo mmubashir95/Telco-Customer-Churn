@@ -2,29 +2,13 @@ from __future__ import annotations
 
 import pandas as pd
 
+from src.config import CATEGORICAL_COLUMNS, NUMERICAL_COLUMNS, TARGET_COLUMN
 
 REQUIRED_COLUMNS = [
     "customerID",
-    "gender",
-    "SeniorCitizen",
-    "Partner",
-    "Dependents",
-    "tenure",
-    "PhoneService",
-    "MultipleLines",
-    "InternetService",
-    "OnlineSecurity",
-    "OnlineBackup",
-    "DeviceProtection",
-    "TechSupport",
-    "StreamingTV",
-    "StreamingMovies",
-    "Contract",
-    "PaperlessBilling",
-    "PaymentMethod",
-    "MonthlyCharges",
-    "TotalCharges",
-    "Churn",
+    *CATEGORICAL_COLUMNS,
+    *NUMERICAL_COLUMNS,
+    TARGET_COLUMN,
 ]
 
 
@@ -44,14 +28,14 @@ def validate_required_columns(df: pd.DataFrame) -> None:
 
 
 def validate_churn_values(df: pd.DataFrame) -> None:
-    if "Churn" not in df.columns:
-        raise DataValidationError("Target column 'Churn' is missing.")
+    if TARGET_COLUMN not in df.columns:
+        raise DataValidationError(f"Target column '{TARGET_COLUMN}' is missing.")
 
     allowed = {"Yes", "No"}
-    actual = set(df["Churn"].dropna().astype(str).str.strip().unique())
+    actual = set(df[TARGET_COLUMN].dropna().astype(str).str.strip().unique())
     invalid = sorted(actual - allowed)
     if invalid:
-        raise DataValidationError(f"Invalid values in 'Churn': {invalid}")
+        raise DataValidationError(f"Invalid values in '{TARGET_COLUMN}': {invalid}")
 
 
 def validate_customer_id_unique(df: pd.DataFrame) -> None:
@@ -80,7 +64,7 @@ def validate_total_charges_numeric(df: pd.DataFrame) -> None:
 
 
 def validate_non_negative_numeric_columns(df: pd.DataFrame) -> None:
-    numeric_columns = ["tenure", "MonthlyCharges", "TotalCharges"]
+    numeric_columns = NUMERICAL_COLUMNS
     missing = [column for column in numeric_columns if column not in df.columns]
     if missing:
         raise DataValidationError(f"Missing numeric columns for validation: {missing}")

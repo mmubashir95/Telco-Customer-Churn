@@ -1,6 +1,7 @@
-import pandas as pd
+from src.config import DATA_PATH
+from src.data.data_loader import load_raw_data
 
-df = pd.read_csv("data/WA_Fn-UseC_-Telco-Customer-Churn.csv")
+df = load_raw_data(DATA_PATH)
 
 print(df.shape)
-df.head()
+print(df.head())
