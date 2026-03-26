@@ -33,6 +33,7 @@ htmlcov/
 .ipynb_checkpoints/
 
 # Local reports and generated EDA artifacts
+data/
 reports/
 
 # IDE and editor files
