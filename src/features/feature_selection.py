@@ -155,6 +155,23 @@ def run_feature_selection(
         stratify=y,
     )
 
+    missing_values = X_train.isna().sum().sort_values(ascending=False)
+    missing_features = missing_values[missing_values > 0]
+    dtype_summary = (
+        X_train.dtypes.astype(str)
+        .value_counts()
+        .rename_axis("dtype")
+        .reset_index(name="feature_count")
+    )
+    duplicate_columns = X_train.columns[X_train.columns.duplicated()].tolist()
+    sanity_summary = {
+        "feature_count": X_train.shape[1],
+        "row_count": X_train.shape[0],
+        "missing_feature_count": int(missing_features.shape[0]),
+        "total_missing_values": int(missing_features.sum()) if not missing_features.empty else 0,
+        "duplicate_column_count": len(duplicate_columns),
+    }
+
     encoded = _prepare_encoded_feature_matrices(X_train, X_test)
     numerical_features = encoded["numerical_features"]
     binary_features = encoded["binary_features"]
@@ -334,6 +351,14 @@ def run_feature_selection(
             "select_from_model_selected": sfm_selector.get_support(),
         }
     )
+    model_selection_summary = {
+        "feature_count_input": model_selection_train.shape[1],
+        "l1_selected_count": int(l1_selection_df["l1_selected"].sum()),
+        "rfe_selected_count": int(rfe_df["rfe_selected"].sum()),
+        "select_from_model_selected_count": int(
+            select_from_model_df["select_from_model_selected"].sum()
+        ),
+    }
 
     selection_summary_df = pd.DataFrame({"feature": X_train_selection.columns})
     selection_summary_df["type"] = selection_summary_df["feature"].map(feature_type_map).fillna(
@@ -567,9 +592,25 @@ def run_feature_selection(
         "dropped_columns": dropped_features + sorted(manual_drop_features),
         "final_selected_features": selected_features,
     }
+    if vif_df.empty:
+        vif_summary_note = (
+            "VIF could not be computed from the current numerical feature subset. "
+            "Use the redundancy section as the temporary multicollinearity guide."
+        )
+    else:
+        top_vif_rows = vif_df.head(3)
+        top_vif_text = ", ".join(
+            f"{row.feature} = {row.vif:.2f}" for row in top_vif_rows.itertuples(index=False)
+        )
+        vif_summary_note = (
+            f"VIF was computed using {vif_method}. Highest VIF values: {top_vif_text}. "
+            "Features above the common threshold of 5 should be reviewed carefully for linear models."
+        )
 
     return {
         "dataset_summary": dataset_summary,
+        "sanity_summary": sanity_summary,
+        "dtype_summary": dtype_summary,
         "feature_type_summary": feature_type_summary,
         "low_information_summary": low_information_summary,
         "target_relationship_df": target_relationship_df,
@@ -578,6 +619,8 @@ def run_feature_selection(
         "tree_importance_df": rf_importance_df,
         "vif_df": vif_df,
         "vif_method": vif_method,
+        "vif_summary_note": vif_summary_note,
+        "model_selection_summary": model_selection_summary,
         "l1_selection_df": l1_selection_df,
         "rfe_df": rfe_df,
         "select_from_model_df": select_from_model_df,
